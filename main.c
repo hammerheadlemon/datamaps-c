@@ -1,32 +1,130 @@
 #include <stdio.h>
-#include <unistd.h>
-#include <getopt.h>
+#include <error.h>
+#include <stdlib.h>
+#include <argp.h>
+
+//https://www.gnu.org/software/libc/manual/html_node/Argp-Example-4.html#Argp-Example-4
+
+const char *argp_program_version = "datamaps 2.0";
+const char *argp_program_bug_address = "datamaps@twentyfoursoftware.com";
+
+// Program documentation
+static char doc[] = "datamaps -- extract data from spreadsheets using key values stored in CSV files! That is it.";
+
+// A description of the arguments we accept
+static char args_doc[] = "import export";
+
+// Keys for options without short options
+#define OPT_ABORT 1  // --abort
+
+//The options we understand
+static struct argp_option options[] = {
+    {"verbose", 'v', 0, 0, "Produce verbose output"},
+    {"quiet", 'q', 0, 0, "Don't produce any output"},
+    {"silent", 's', 0, OPTION_ALIAS},
+    {"output", 'o', "FILE", 0, "Output to FILE instead of standard output"},
+    {"datamap", 'd', 0, 0, "Path to datamap file"},
+    { 0,0,0,0, "The following options should be grouped together:" },
+    {"repeat", 'r', "COUNT", OPTION_ARG_OPTIONAL, "Repeat the output COUNT (default 10) times"},
+    {"abort", OPT_ABORT, 0, 0, "Abort before showing any output"},
+    {0}
+};
+
+// Used by main to communicate with parse_opt.
+struct arguments
+{
+    char *arg1;
+    char **strings;
+    int silent, verbose;
+    char *output_file;
+    char *datamap_path;
+    int repeat;
+    int abort;
+};
+
+// Parse a single option
+static error_t parse_opt (int key, char *arg, struct argp_state *state)
+{
+    // Get the input argument for arg_parse, which we
+    // know is a pointer to our arguments structure.
+    struct arguments *arguments = state->input;
+
+    switch (key)
+    {
+        case 'q': case 's':
+            arguments->silent = 1;
+            break;
+        case 'v':
+            arguments->verbose = 1;
+        case 'o':
+            arguments->output_file = arg;
+            break;
+        case 'd':
+            arguments->datamap_path = arg;
+            break;
+        case 'r':
+            arguments->repeat = arg ? atoi (arg) : 10;
+            break;
+        case OPT_ABORT:
+            arguments->abort = 1;
+            break;
+        case ARGP_KEY_NO_ARGS:
+            argp_usage(state);
+        case ARGP_KEY_ARG:
+            // Here we know that state->arg_num == 0, since we force
+            // argument parsing to end before any more arguments can get here.
+            arguments->arg1 = arg;
+
+            // Now we consume all the rest of the arguments.
+            // state->next is the index in state->argv of the next
+            // argument to be parsed, which is the first string
+            // we're interested in, so we can just use
+            // &state->argv[state->next] as the value for arguments-> strings
+            //
+            // In addition, by setting state->next to the end of the arguments,
+            // we can force argp to stop parsing here and return.
+            arguments->strings = &state->argv[state->next];
+            state->next = state->argc;
+            break;
+        default:
+            return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
+}
+
+static struct argp argp = {options, parse_opt, args_doc, doc};
 
 int main(int argc, char *argv[])
 {
-    char *cchoice = NULL;
-    char *dchoice = NULL;
-    printf("Welcome to Datamaps written in C\n\n");
-    int option_index;
+    int i, j;
+    struct arguments arguments;
 
-    opterr = 1;
+    // Default values
+    arguments.silent = 0;
+    arguments.verbose = 0;
+    arguments.output_file = "-";
+    arguments.repeat = 1;
+    arguments.abort = 0;
 
-    while ((option_index = getopt(argc, argv, ":c:d:")) != -1)
-        switch (option_index) {
-            case 'c':
-                cchoice = optarg;
-                printf("You get %s as your c option\n", cchoice);
-                break;
-            case 'd':
-                dchoice = optarg;
-                printf("You get %s as your d option\n", dchoice);
-                break;
-            case ':':
-                printf("You want to run %s\n", optopt);
-                break;
-            default:
-                printf("out\n");
+    // Parse our arguments; every option seen by parse_opt will be
+    // reflected in arguments.
+    argp_parse(&argp, argc, argv, 0, 0, &arguments);
+    
+    if(arguments.abort)
+        error(10, 0, "ABORTED");
+
+    for (i = 0; i < arguments.repeat; ++i) {
+        printf("ARG1 = %s\n", arguments.arg1);
+        printf("STRINGS = ");
+        for (j = 0; arguments.strings[j]; ++j) {
+           printf(j==0 ? "%s" : ", %s", arguments.strings[j]); 
         }
+        printf("\n");
+        printf("OUTPUT_FILE = %s\nVERBOSE = %s\nSILENT = %s\n",
+                arguments.output_file,
+                arguments.verbose ? "yes" : "no",
+                arguments.silent ? "yes" : "no");
+    }
 
-    return 0;
+    exit(0);
 }
