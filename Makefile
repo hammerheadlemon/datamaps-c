@@ -1,2 +1,2 @@
 build:
-	gcc main.c -o datamaps -g
+	gcc  src/reader.c src/main.c -o datamaps -g

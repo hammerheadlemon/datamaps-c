@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <argp.h>
+#include "reader.h"
 
 //https://www.gnu.org/software/libc/manual/html_node/Argp-Example-4.html#Argp-Example-4
 
@@ -118,8 +119,10 @@ int main(int argc, char *argv[])
     if(arguments.abort)
         error(10, 0, "ABORTED");
 
-    if (strcmp("import", arguments.operation) == 0)
+    if (strcmp("import", arguments.operation) == 0) {
         printf("We are going to call an import() func here.\n");
+        import_csv();
+    }
     else if (strcmp("export", arguments.operation) == 0)
         printf("We are going to call an export() func here.\n");
 
