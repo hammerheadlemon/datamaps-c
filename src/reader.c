@@ -57,7 +57,8 @@ int import_csv(char *dm_path)
 
     while (fgets(line, 1024, stream))
     {
-        char *tmp = strdup(line);
+        char tmp[1024];
+        strcpy(tmp, line);
 
         if (lineno == 1) {
             expected_fields = getFields(line, strlen(tmp));
@@ -67,7 +68,7 @@ int import_csv(char *dm_path)
         fields = getFields(line, strlen(tmp));
         if (fields != expected_fields) {
             printf("Incorrect fields in line %s", tmp);
-            printf("We do not allow narrative-style keys, fucker!\n");     
+            printf("We do not allow narrative-style keys.\n");     
             continue;
         }
         
@@ -81,7 +82,6 @@ int import_csv(char *dm_path)
         printf("%-10s %s\n", "Sheet:",  dml->sheet);
         printf("%-10s %s\n", "Cellref:", dml->cellref);
 
-        free(tmp);
         free(dml);
     }
     return 0;
