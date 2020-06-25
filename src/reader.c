@@ -11,11 +11,8 @@ typedef struct Datamapline {
 
 /* This fails badly if it reads in a line that has more than three fields! */
 /* TODO: fix it */
-static const Datamapline *createDatamapLine(char *line)
+static int populateDatamapLine(char *line, Datamapline *dml)
 {
-
-    struct Datamapline *dml;
-    dml = malloc(sizeof(Datamapline));
 
     int count = 1;
     char *tok;
@@ -35,7 +32,7 @@ static const Datamapline *createDatamapLine(char *line)
             count++;
         }
     }
-    return dml;
+    return 0;
 }
 
 static int getFields(char *line, size_t len)
@@ -74,12 +71,18 @@ int import_csv(char *dm_path)
             continue;
         }
         
-        const Datamapline *dml = createDatamapLine(tmp);
+        Datamapline *dml = malloc(sizeof(Datamapline));
+        if (populateDatamapLine(line, dml) == 1) {
+            printf("Something went very wrong\n");
+            return 1;
+        }
+
         printf("%-10s %s\n", "Key:",  dml->key);
         printf("%-10s %s\n", "Sheet:",  dml->sheet);
         printf("%-10s %s\n", "Cellref:", dml->cellref);
 
         free(tmp);
+        free(dml);
     }
     return 0;
 }
