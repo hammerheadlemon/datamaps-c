@@ -121,7 +121,11 @@ int main(int argc, char *argv[])
 
     if (strcmp("import", arguments.operation) == 0) {
         printf("We are going to call an import() func here.\n");
-        import_csv();
+        if (strcmp("", arguments.datamap_path) == 0) {
+            printf("Please use -d to define a path to your datamap file.\n");
+        } else {
+            import_csv(arguments.datamap_path);
+        }
     }
     else if (strcmp("export", arguments.operation) == 0)
         printf("We are going to call an export() func here.\n");
