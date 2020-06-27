@@ -72,6 +72,7 @@ int import_csv(char *dm_path)
             continue;
         }
         
+        /* We pass in a shell of a struct to be populatum */
         Datamapline *dml = malloc(sizeof(Datamapline));
         if (populateDatamapLine(line, dml) == 1) {
             printf("Something went very wrong\n");
