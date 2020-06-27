@@ -14,6 +14,10 @@ typedef struct Datamapline {
     char cellref[5];
 } Datamapline;
 
+
+
+
+
 /* This fails badly if it reads in a line that has more than three fields! */
 /* TODO: fix it */
 // Having said that, do we want to develop a generic CSV reader? Probably not
@@ -53,8 +57,47 @@ static int getFields(char *line, size_t len)
         return fieldcount;
 }
 
+int sql_stmt(const char *stmt, sqlite3 *db)
+{
+    char *err_msg;
+    int ret;
+
+    ret = sqlite3_exec(db, stmt, 0, 0, &err_msg);
+
+    if (ret != SQLITE_OK) {
+        fprintf(stderr, "Error in statement: %s [%s].\n", stmt, err_msg);
+        return 1;
+    }
+    return SQLITE_OK;
+}
+
 int import_csv(char *dm_path)
 {
+    sqlite3 *db;
+    char *err_msg = 0;
+
+    // returns a return code
+    int rc = sqlite3_open("test.db", &db);
+
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return 1;
+    }
+
+    // SQL to create the table
+    rc = sql_stmt("DROP TABLE IF EXISTS Datamap;"
+             "CREATE TABLE Datamap(Id INT PRIMARY KEY, Key TEXT, Cellref TEXT);"
+             ,db);
+
+    // handle error if this fails
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "SQL Error: %s\n", err_msg);
+        sqlite3_free(err_msg);
+        sqlite3_close(db);
+        return 1;
+    }
+
     FILE *stream = fopen(dm_path, "r");
     
     int lineno = 1;
@@ -86,11 +129,33 @@ int import_csv(char *dm_path)
             return 1;
         }
 
-        printf("%-10s %s\n", "Key:",  dml->key);
-        printf("%-10s %s\n", "Sheet:",  dml->sheet);
-        printf("%-10s %s\n", "Cellref:", dml->cellref);
+        sqlite3_stmt *res;
 
+        char *insert_sql = "INSERT INTO Datamap VALUES(?,?,?);";
+        rc = sqlite3_prepare_v2(db, insert_sql, -1, &res, 0);
+        if (rc == SQLITE_OK) {
+            if(sqlite3_bind_text(res, 1, dml->key, sizeof(dml->key),SQLITE_STATIC) != SQLITE_OK) {
+                fprintf(stderr, "Couldn't bind value.\n");
+                return 1;
+            }
+            if(sqlite3_bind_text(res, 2, dml->sheet, sizeof(dml->sheet),SQLITE_STATIC) != SQLITE_OK) {
+                fprintf(stderr, "Couldn't bind value.\n");
+                return 1;
+            }
+            if(sqlite3_bind_text(res, 3, dml->cellref, sizeof(dml->cellref),SQLITE_STATIC) != SQLITE_OK) {
+                fprintf(stderr, "Couldn't bind value.\n");
+                return 1;
+            }
+            if(sqlite3_step(res) != SQLITE_DONE) {
+                fprintf(stderr, "Cound not step (execute) statement.\n");
+                return 1;
+            }
+        }
+        /* printf("%-10s %s\n", "Key:",  dml->key); */
+        /* printf("%-10s %s\n", "Sheet:",  dml->sheet); */
+        /* printf("%-10s %s\n", "Cellref:", dml->cellref); */
         free(dml);
+        sqlite3_close(db);
     }
-    return 0;
+        return 0;
 }
