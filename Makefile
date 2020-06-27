@@ -1,10 +1,14 @@
+CC = gcc
+CFLAGS = -Wall -g -std=c11
+LDFLAGS = -lsqlite3
+
 all: datamaps
 	
 datamaps: src/reader.o src/main.o
-	gcc src/reader.o src/main.o -o datamaps -g -std=c11 -Wall
+	gcc src/reader.o src/main.o -o datamaps $(CFLAGS) $(LDFLAGS)
 
 reader.o:  
-	gcc -c src/reader.c src/reader.h
+	gcc -c src/reader.c src/reader.h $(LDFLAGS)
 
 main.o:
 	gcc -c src/main.c

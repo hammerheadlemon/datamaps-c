@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "reader.h"
+#include <sqlite3.h>
+
+/*
+ * How do we want to store the Datamapline structs?
+ */
 
 typedef struct Datamapline {
     char *key;
@@ -11,6 +16,8 @@ typedef struct Datamapline {
 
 /* This fails badly if it reads in a line that has more than three fields! */
 /* TODO: fix it */
+// Having said that, do we want to develop a generic CSV reader? Probably not
+// at this stage, although we could use it elsewhere.
 static int populateDatamapLine(char *line, Datamapline *dml)
 {
 
