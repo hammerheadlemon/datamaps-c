@@ -14,6 +14,7 @@ typedef struct Datamapline {
     char cellref[5];
 } Datamapline;
 
+// Helper function which returns a sqlite3 error and cleans up
 void check_error(int result_code, sqlite3 *db)
 {
     if (result_code != SQLITE_OK) {
@@ -28,7 +29,7 @@ void check_error(int result_code, sqlite3 *db)
 /* TODO: fix it */
 // Having said that, do we want to develop a generic CSV reader? Probably not
 // at this stage, although we could use it elsewhere.
-static int populateDatamapLine(char *line, Datamapline *dml)
+static int populate_DatamapLine(char *line, Datamapline *dml)
 {
 
     int count = 1;
@@ -84,7 +85,7 @@ int dm_import(char *dm_path)
 
     // returns a return code
     int rc = sqlite3_open("test.db", &db);
-    // handle error if this fails
+    // handle error if this fails - we use this all over the place
     check_error(rc, db);
 
     // SQL to create the table
@@ -136,7 +137,7 @@ int dm_import(char *dm_path)
 
         /* We pass in a shell of a struct to be populatum */
         Datamapline *dml = malloc(sizeof(Datamapline));
-        if (populateDatamapLine(line, dml) == 1) {
+        if (populate_DatamapLine(line, dml) == 1) {
             printf("Something went very wrong\n");
             return 1;
         }
