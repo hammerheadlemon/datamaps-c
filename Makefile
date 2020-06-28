@@ -14,4 +14,4 @@ main.o:
 	gcc -c src/main.c
 
 clean:
-	rm src/reader.o src/main.o datamaps
+	rm src/reader.o src/main.o datamaps test.db

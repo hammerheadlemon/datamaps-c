@@ -103,6 +103,9 @@ int import_csv(char *dm_path)
     sqlite3_stmt *compiled_statement;
 
     const char *insert_sql = "INSERT INTO datamap VALUES(?,?,?,?);";
+    
+    char *err_msg;
+    sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &err_msg);
 
     while (fgets(line, 1024, stream))
     {
@@ -153,6 +156,10 @@ int import_csv(char *dm_path)
 
         free(dml);
     }
+        sqlite3_clear_bindings(compiled_statement);
+        sqlite3_reset(compiled_statement);
+        sqlite3_finalize(compiled_statement);
+        sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
         sqlite3_close(db);
         return 0;
 }
