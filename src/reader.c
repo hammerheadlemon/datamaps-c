@@ -89,11 +89,33 @@ int dm_import(char *dm_path)
     check_error(rc, db);
 
     // SQL to create the tables
-    rc = sql_stmt("DROP TABLE IF EXISTS datamap_line;"
-             "CREATE TABLE datamap_line(id INTEGER PRIMARY KEY, key TEXT, sheet TEXT, cellref TEXT);"
+    rc = sql_stmt("DROP TABLE IF EXISTS datamap;"
+             "CREATE TABLE datamap(id INTEGER PRIMARY KEY, name TEXT, date_created TEXT);"
              ,db);
     check_error(rc, db);
 
+    rc = sql_stmt("DROP TABLE IF EXISTS datamap_line;"
+            "CREATE TABLE datamap_line("
+                "id INTEGER PRIMARY KEY,"
+                "dm_id INTEGER NOT NULL,"
+                "key TEXT,"
+                "sheet TEXT,"
+                "cellref TEXT,"
+                "FOREIGN KEY (dm_id) REFERENCES datamap (id) ON DELETE CASCADE ON UPDATE CASCADE);", db);
+    check_error(rc, db);
+
+    // create the actual datamap entry first
+    sqlite3_stmt *dm_create_stmt;
+    const char *dm_sql = "INSERT INTO datamap VALUES (?,?,?)";
+
+    rc = sqlite3_prepare_v2(db, dm_sql, -1, &dm_create_stmt, NULL);
+    check_error(rc, db);
+
+    sqlite3_bind_text(dm_create_stmt, 2, "TEST DATAMAP", 12, SQLITE_TRANSIENT);
+    sqlite3_bind_text(dm_create_stmt, 3, "20200202", 8, SQLITE_TRANSIENT);
+    rc = sqlite3_step(dm_create_stmt);
+
+    int last_id = sqlite3_last_insert_rowid(db);
 
     FILE *stream = fopen(dm_path, "r");
     
@@ -104,7 +126,7 @@ int dm_import(char *dm_path)
 
     sqlite3_stmt *compiled_statement;
 
-    const char *insert_sql = "INSERT INTO datamap_line VALUES(?,?,?,?);";
+    const char *insert_sql = "INSERT INTO datamap_line VALUES(?,?,?,?,?);";
     
     char *err_msg;
     sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &err_msg);
@@ -145,9 +167,10 @@ int dm_import(char *dm_path)
         rc = sqlite3_prepare_v2(db, insert_sql, -1, &compiled_statement, NULL);
         check_error(rc, db);
         
-        sqlite3_bind_text(compiled_statement, 2, dml->key, strlen(dml->key),SQLITE_TRANSIENT);
-        sqlite3_bind_text(compiled_statement, 3, dml->sheet, strlen(dml->sheet),SQLITE_TRANSIENT);
-        sqlite3_bind_text(compiled_statement, 4, dml->cellref, strlen(dml->cellref),SQLITE_TRANSIENT);
+        sqlite3_bind_int64(compiled_statement, 2, last_id);
+        sqlite3_bind_text(compiled_statement, 3, dml->key, strlen(dml->key),SQLITE_TRANSIENT);
+        sqlite3_bind_text(compiled_statement, 4, dml->sheet, strlen(dml->sheet),SQLITE_TRANSIENT);
+        sqlite3_bind_text(compiled_statement, 5, dml->cellref, strlen(dml->cellref),SQLITE_TRANSIENT);
 
         rc = sqlite3_step(compiled_statement);
 
