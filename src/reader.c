@@ -88,21 +88,24 @@ int dm_import(char *dm_path, char *dm_name)
     // handle error if this fails - we use this all over the place
     check_error(rc, db);
 
+    rc = sql_stmt("PRAGMA foreign_keys = ON;",  db);
+
     // SQL to create the tables
     rc = sql_stmt("DROP TABLE IF EXISTS datamap;"
              "CREATE TABLE datamap(id INTEGER PRIMARY KEY, name TEXT, date_created TEXT);"
              ,db);
-    check_error(rc, db);
 
     rc = sql_stmt("DROP TABLE IF EXISTS datamap_line;"
             "CREATE TABLE datamap_line("
                 "id INTEGER PRIMARY KEY,"
-                "dm_id INTEGER NOT NULL,"
-                "key TEXT,"
-                "sheet TEXT,"
+                "dm_id INTEGER,"
+                "key TEXT NOT NULL,"
+                "sheet TEXT NOT NULL,"
                 "cellref TEXT,"
-                "FOREIGN KEY (dm_id) REFERENCES datamap (id) ON DELETE CASCADE ON UPDATE CASCADE);", db);
-    check_error(rc, db);
+                "FOREIGN KEY (dm_id)"
+                "   REFERENCES datamap(id)"
+                "   ON DELETE CASCADE"
+                ");", db);
 
     // create the actual datamap entry first
     sqlite3_stmt *dm_create_stmt;
