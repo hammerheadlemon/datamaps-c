@@ -20,8 +20,11 @@ static char args_doc[] = "datamap|export";
 #define OPT_ABORT 1  // --abort
 
 // https://stackoverflow.com/questions/47727755/gnu-argp-how-to-parse-option-with-only-long-name
+// We use enums for setting long-only options here. The first one is set to
+// 0x100 (256) - anything following doesn't need to be declared - they will go
+// up to 0x101 I think and so on. You can start the next block at 0x200, etc.
 enum datamap_options {
-    DM_IMPORT = 0x100,
+    DM_IMPORT = 0x100, // setting this to 0x100 (256) because non-ASCII characters ignored but we can still switch on it below
 };
 
 //The options we understand
