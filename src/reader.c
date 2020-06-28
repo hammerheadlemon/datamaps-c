@@ -78,6 +78,15 @@ int sql_stmt(const char *stmt, sqlite3 *db)
     return SQLITE_OK;
 }
 
+
+int exec_callback(void *a_param, int argc, char **argv, char **column) {
+    strcpy(a_param, argv[0]);
+    for (int i=0; i<argc; i++)
+        printf("%s,\t", argv[i]);
+    printf("\n");
+    return 0;
+}
+
 // Import a datamap file into the database
 int dm_import(char *dm_path, char *dm_name)
 {
@@ -107,16 +116,23 @@ int dm_import(char *dm_path, char *dm_name)
                 "   ON DELETE CASCADE"
                 ");", db);
 
-    // create the actual datamap entry first
+    // prep datamap create sql
     sqlite3_stmt *dm_create_stmt;
     const char *dm_sql = "INSERT INTO datamap VALUES (?,?,?)";
-
     rc = sqlite3_prepare_v2(db, dm_sql, -1, &dm_create_stmt, NULL);
     check_error(rc, db);
 
-    sqlite3_bind_text(dm_create_stmt, 2, dm_name, strlen(dm_name), SQLITE_TRANSIENT);
-    // TODO fix the datetime now function - it needs to be parsed SQL..
-    sqlite3_bind_text(dm_create_stmt, 3, "datetime('now')", 23, SQLITE_TRANSIENT);
+    // prep date sql to be used in datamap entry
+    const char *date_sql = "SELECT datetime('now', 'localtime')";
+    char date_str[23];
+    rc = sqlite3_exec(db, date_sql, exec_callback, &date_str, NULL);
+    check_error(rc, db);
+
+    // bind params
+    sqlite3_bind_text(dm_create_stmt, 2, dm_name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(dm_create_stmt, 3, date_str, -1, SQLITE_TRANSIENT);
+
+    // now execute the command to create the datamap entry
     rc = sqlite3_step(dm_create_stmt);
 
     int last_id = sqlite3_last_insert_rowid(db);
