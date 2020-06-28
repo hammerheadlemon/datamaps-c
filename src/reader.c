@@ -77,6 +77,7 @@ int sql_stmt(const char *stmt, sqlite3 *db)
     return SQLITE_OK;
 }
 
+// Import a datamap file into the database
 int dm_import(char *dm_path)
 {
     sqlite3 *db;
@@ -114,7 +115,8 @@ int dm_import(char *dm_path)
 
         if (lineno == 1) {
             expected_fields = getFields(line, strlen(tmp));
-            lineno++;
+            // we want to increment lineno here but we delay this
+            // until after we have called getFields()
         } 
         
         fields = getFields(line, strlen(tmp));
@@ -124,6 +126,14 @@ int dm_import(char *dm_path)
             continue;
         }
         
+        // We use lineno for two purposes: to get header row
+        // using getFields() and for skipping the header row
+        // when we import into database.
+        if (lineno == 1) {
+            lineno++;
+            continue;
+        }
+
         /* We pass in a shell of a struct to be populatum */
         Datamapline *dml = malloc(sizeof(Datamapline));
         if (populateDatamapLine(line, dml) == 1) {

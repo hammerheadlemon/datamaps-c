@@ -31,7 +31,7 @@ static struct argp_option options[] = {
     {"quiet", 'q', 0, 0, "Don't produce any output", 1},
     {"silent", 's', 0, OPTION_ALIAS},
 
-    { 0,0,0,0, "Datamap file options:" },
+    { 0,0,0,0, "Datamap options: (when calling 'datamaps datamap')" },
     {"import", DM_IMPORT, "PATH", 0, "PATH to datamap file to import"},
 
     { 0,0,0,0, "The following options should be grouped together:" },
