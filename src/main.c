@@ -26,6 +26,7 @@ static char args_doc[] = "datamap|export";
 enum datamap_options {
     DM_IMPORT = 0x100, // setting this to 0x100 (256) because non-ASCII characters ignored but we can still switch on it below
     DM_NAME,
+    DM_OVERWRITE, // we want to start again with this datamap (DROP TABLE first)
 };
 
 //The options we understand
@@ -38,6 +39,7 @@ static struct argp_option options[] = {
     { 0,0,0,0, "Datamap options: (when calling 'datamaps datamap')" },
     {"import", DM_IMPORT, "PATH", 0, "PATH to datamap file to import"},
     {"name", DM_NAME, "NAME", 0, "The name you want to give to the imported datamap"},
+    {"overwrite", DM_OVERWRITE, 0, 0, "Start fresh with this datamap (erases existing datamap data)"},
 
     { 0,0,0,0, "The following options should be grouped together:" },
     {"output", 'o', "FILE", 0, "Output to FILE instead of standard output"},
@@ -55,6 +57,7 @@ struct arguments
     char *output_file;
     char *datamap_path;
     char *dm_name;
+    int dm_overwrite;
     int repeat;
     int abort;
 };
@@ -81,6 +84,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case DM_NAME:
             arguments->dm_name = arg;
+        case DM_OVERWRITE:
+            arguments->dm_overwrite = 1;
         case 'r':
             arguments->repeat = arg ? atoi (arg) : 10;
             break;
@@ -126,6 +131,7 @@ int main(int argc, char *argv[])
     arguments.abort = 0;
     arguments.datamap_path = "";
     arguments.dm_name = "New datamap";
+    arguments.dm_overwrite = 0;
 
     // Parse our arguments; every option seen by parse_opt will be
     // reflected in arguments.
@@ -139,6 +145,7 @@ int main(int argc, char *argv[])
 
     if (strcmp("datamap", arguments.operation) == 0) {
         printf("Importing datamap file at %s\n", arguments.datamap_path);
+        printf("DATAMAP_OVERWRITE = %d\n", arguments.dm_overwrite);
         dm_import(arguments.datamap_path, arguments.dm_name);
     }
     else if (strcmp("export", arguments.operation) == 0)

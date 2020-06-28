@@ -79,6 +79,9 @@ int sql_stmt(const char *stmt, sqlite3 *db)
 }
 
 
+// This callback can be used as the third param in the sqlite3_exec() function
+// to get the output result of that call in a_param. It gets the first element
+// of the array and copies it in. Be careful with strings here.
 int exec_callback(void *a_param, int argc, char **argv, char **column) {
     strcpy(a_param, argv[0]);
     for (int i=0; i<argc; i++)
@@ -124,7 +127,7 @@ int dm_import(char *dm_path, char *dm_name)
 
     // prep date sql to be used in datamap entry
     const char *date_sql = "SELECT datetime('now', 'localtime')";
-    char date_str[23];
+    char date_str[23]; // the output of SELECT datetime() is 23 chars
     rc = sqlite3_exec(db, date_sql, exec_callback, &date_str, NULL);
     check_error(rc, db);
 
@@ -137,6 +140,7 @@ int dm_import(char *dm_path, char *dm_name)
 
     int last_id = sqlite3_last_insert_rowid(db);
 
+    /* Let's get on with opening the file and reading the stuff in. */ 
     FILE *stream = fopen(dm_path, "r");
     
     int lineno = 1;
