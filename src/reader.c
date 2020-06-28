@@ -79,7 +79,7 @@ int sql_stmt(const char *stmt, sqlite3 *db)
 }
 
 // Import a datamap file into the database
-int dm_import(char *dm_path)
+int dm_import(char *dm_path, char *dm_name)
 {
     sqlite3 *db;
 
@@ -111,8 +111,9 @@ int dm_import(char *dm_path)
     rc = sqlite3_prepare_v2(db, dm_sql, -1, &dm_create_stmt, NULL);
     check_error(rc, db);
 
-    sqlite3_bind_text(dm_create_stmt, 2, "TEST DATAMAP", 12, SQLITE_TRANSIENT);
-    sqlite3_bind_text(dm_create_stmt, 3, "20200202", 8, SQLITE_TRANSIENT);
+    sqlite3_bind_text(dm_create_stmt, 2, dm_name, strlen(dm_name), SQLITE_TRANSIENT);
+    // TODO fix the datetime now function - it needs to be parsed SQL..
+    sqlite3_bind_text(dm_create_stmt, 3, "datetime('now')", 23, SQLITE_TRANSIENT);
     rc = sqlite3_step(dm_create_stmt);
 
     int last_id = sqlite3_last_insert_rowid(db);
