@@ -88,9 +88,9 @@ int dm_import(char *dm_path)
     // handle error if this fails - we use this all over the place
     check_error(rc, db);
 
-    // SQL to create the table
-    rc = sql_stmt("DROP TABLE IF EXISTS datamap;"
-             "CREATE TABLE datamap(id INTEGER PRIMARY KEY, key TEXT, sheet TEXT, cellref TEXT);"
+    // SQL to create the tables
+    rc = sql_stmt("DROP TABLE IF EXISTS datamap_line;"
+             "CREATE TABLE datamap_line(id INTEGER PRIMARY KEY, key TEXT, sheet TEXT, cellref TEXT);"
              ,db);
     check_error(rc, db);
 
@@ -104,7 +104,7 @@ int dm_import(char *dm_path)
 
     sqlite3_stmt *compiled_statement;
 
-    const char *insert_sql = "INSERT INTO datamap VALUES(?,?,?,?);";
+    const char *insert_sql = "INSERT INTO datamap_line VALUES(?,?,?,?);";
     
     char *err_msg;
     sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &err_msg);
