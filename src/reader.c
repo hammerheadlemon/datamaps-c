@@ -14,8 +14,14 @@ typedef struct Datamapline {
     char cellref[5];
 } Datamapline;
 
-
-
+void check_error(int result_code, sqlite3 *db)
+{
+    if (result_code != SQLITE_OK) {
+        fprintf(stderr, "Error #%d: %s\n", result_code, sqlite3_errmsg(db));
+        sqlite3_close(db);
+        exit(result_code);
+    }
+}
 
 
 /* This fails badly if it reads in a line that has more than three fields! */
@@ -74,29 +80,18 @@ int sql_stmt(const char *stmt, sqlite3 *db)
 int import_csv(char *dm_path)
 {
     sqlite3 *db;
-    char *err_msg = 0;
 
     // returns a return code
     int rc = sqlite3_open("test.db", &db);
-
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
-        return 1;
-    }
+    // handle error if this fails
+    check_error(rc, db);
 
     // SQL to create the table
-    rc = sql_stmt("DROP TABLE IF EXISTS Datamap;"
-             "CREATE TABLE Datamap(Id INT PRIMARY KEY, Key TEXT, Cellref TEXT);"
+    rc = sql_stmt("DROP TABLE IF EXISTS datamap;"
+             "CREATE TABLE datamap(id INTEGER PRIMARY KEY, key TEXT, sheet TEXT, cellref TEXT);"
              ,db);
+    check_error(rc, db);
 
-    // handle error if this fails
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL Error: %s\n", err_msg);
-        sqlite3_free(err_msg);
-        sqlite3_close(db);
-        return 1;
-    }
 
     FILE *stream = fopen(dm_path, "r");
     
@@ -104,6 +99,10 @@ int import_csv(char *dm_path)
     char line[1024];
     int expected_fields = 0;
     int fields;
+
+    sqlite3_stmt *compiled_statement;
+
+    const char *insert_sql = "INSERT INTO datamap VALUES(?,?,?,?);";
 
     while (fgets(line, 1024, stream))
     {
@@ -128,34 +127,32 @@ int import_csv(char *dm_path)
             printf("Something went very wrong\n");
             return 1;
         }
+    
+        rc = sqlite3_prepare_v2(db, insert_sql, -1, &compiled_statement, NULL);
+        check_error(rc, db);
+        
+        sqlite3_bind_text(compiled_statement, 2, dml->key, strlen(dml->key),SQLITE_TRANSIENT);
+        sqlite3_bind_text(compiled_statement, 3, dml->sheet, strlen(dml->sheet),SQLITE_TRANSIENT);
+        sqlite3_bind_text(compiled_statement, 4, dml->cellref, strlen(dml->cellref),SQLITE_TRANSIENT);
 
-        sqlite3_stmt *res;
+        rc = sqlite3_step(compiled_statement);
 
-        char *insert_sql = "INSERT INTO Datamap VALUES(?,?,?);";
-        rc = sqlite3_prepare_v2(db, insert_sql, -1, &res, 0);
-        if (rc == SQLITE_OK) {
-            if(sqlite3_bind_text(res, 1, dml->key, sizeof(dml->key),SQLITE_STATIC) != SQLITE_OK) {
-                fprintf(stderr, "Couldn't bind value.\n");
-                return 1;
-            }
-            if(sqlite3_bind_text(res, 2, dml->sheet, sizeof(dml->sheet),SQLITE_STATIC) != SQLITE_OK) {
-                fprintf(stderr, "Couldn't bind value.\n");
-                return 1;
-            }
-            if(sqlite3_bind_text(res, 3, dml->cellref, sizeof(dml->cellref),SQLITE_STATIC) != SQLITE_OK) {
-                fprintf(stderr, "Couldn't bind value.\n");
-                return 1;
-            }
-            if(sqlite3_step(res) != SQLITE_DONE) {
-                fprintf(stderr, "Cound not step (execute) statement.\n");
-                return 1;
-            }
+        if(rc != SQLITE_DONE) {
+            fprintf(stderr, "Error #%d: %s\n", rc, sqlite3_errmsg(db));
+            sqlite3_close(db);
+            return rc;
         }
+
+        /* sqlite3_finalize(compiled_statement); */
+        /* sqlite3_clear_bindings(compiled_statement); */
+        /* sqlite3_reset(compiled_statement); */
+
         /* printf("%-10s %s\n", "Key:",  dml->key); */
         /* printf("%-10s %s\n", "Sheet:",  dml->sheet); */
         /* printf("%-10s %s\n", "Cellref:", dml->cellref); */
+
         free(dml);
-        sqlite3_close(db);
     }
+        sqlite3_close(db);
         return 0;
 }
