@@ -77,7 +77,7 @@ int sql_stmt(const char *stmt, sqlite3 *db)
     return SQLITE_OK;
 }
 
-int import_csv(char *dm_path)
+int dm_import(char *dm_path)
 {
     sqlite3 *db;
 

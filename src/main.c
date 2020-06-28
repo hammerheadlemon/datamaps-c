@@ -14,19 +14,28 @@ const char *argp_program_bug_address = "datamaps@twentyfoursoftware.com";
 static char doc[] = "datamaps -- extract data from spreadsheets using key values stored in CSV files! That is it.";
 
 // A description of the arguments we accept
-static char args_doc[] = "import|export";
+static char args_doc[] = "datamap|export";
 
 // Keys for options without short options
 #define OPT_ABORT 1  // --abort
 
+// https://stackoverflow.com/questions/47727755/gnu-argp-how-to-parse-option-with-only-long-name
+enum datamap_options {
+    DM_IMPORT = 0x100,
+};
+
 //The options we understand
 static struct argp_option options[] = {
-    {"verbose", 'v', 0, 0, "Produce verbose output"},
-    {"quiet", 'q', 0, 0, "Don't produce any output"},
+    { 0,0,0,0, "Global options:" },
+    {"verbose", 'v', 0, 0, "Produce verbose output", 1},
+    {"quiet", 'q', 0, 0, "Don't produce any output", 1},
     {"silent", 's', 0, OPTION_ALIAS},
-    {"output", 'o', "FILE", 0, "Output to FILE instead of standard output"},
-    {"datamap", 'd', "PATH", 0, "PATH to datamap file to use instead of default"},
+
+    { 0,0,0,0, "Datamap file options:" },
+    {"import", DM_IMPORT, "PATH", 0, "PATH to datamap file to import"},
+
     { 0,0,0,0, "The following options should be grouped together:" },
+    {"output", 'o', "FILE", 0, "Output to FILE instead of standard output"},
     {"repeat", 'r', "COUNT", OPTION_ARG_OPTIONAL, "Repeat the output COUNT (default 10) times"},
     {"abort", OPT_ABORT, 0, 0, "Abort before showing any output"},
     {0}
@@ -61,7 +70,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
         case 'o':
             arguments->output_file = arg;
             break;
-        case 'd':
+        case DM_IMPORT:
             arguments->datamap_path = arg;
             break;
         case 'r':
@@ -119,13 +128,9 @@ int main(int argc, char *argv[])
     if(arguments.abort)
         error(10, 0, "ABORTED");
 
-    if (strcmp("import", arguments.operation) == 0) {
-        printf("We are going to call an import() func here.\n");
-        if (strcmp("", arguments.datamap_path) == 0) {
-            printf("Please use -d to define a path to your datamap file.\n");
-        } else {
-            import_csv(arguments.datamap_path);
-        }
+    if (strcmp("datamap", arguments.operation) == 0) {
+        printf("Importing datamap file at %s\n", arguments.datamap_path);
+        dm_import(arguments.datamap_path);
     }
     else if (strcmp("export", arguments.operation) == 0)
         printf("We are going to call an export() func here.\n");
