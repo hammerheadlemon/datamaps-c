@@ -91,7 +91,9 @@ int exec_callback(void *a_param, int argc, char **argv, char **column) {
 }
 
 // Import a datamap file into the database
-int dm_import(char *dm_path, char *dm_name)
+// dm_name is a name a user can add - CHECK THIS
+// dm_overwrite flag indicates if we want to create a new table or not
+int dm_import(char *dm_path, char *dm_name, int dm_overwrite)
 {
     sqlite3 *db;
 
@@ -103,21 +105,23 @@ int dm_import(char *dm_path, char *dm_name)
     rc = sql_stmt("PRAGMA foreign_keys = ON;",  db);
 
     // SQL to create the tables
-    rc = sql_stmt("DROP TABLE IF EXISTS datamap;"
-             "CREATE TABLE datamap(id INTEGER PRIMARY KEY, name TEXT, date_created TEXT);"
-             ,db);
-
-    rc = sql_stmt("DROP TABLE IF EXISTS datamap_line;"
-            "CREATE TABLE datamap_line("
-                "id INTEGER PRIMARY KEY,"
-                "dm_id INTEGER,"
-                "key TEXT NOT NULL,"
-                "sheet TEXT NOT NULL,"
-                "cellref TEXT,"
-                "FOREIGN KEY (dm_id)"
-                "   REFERENCES datamap(id)"
-                "   ON DELETE CASCADE"
-                ");", db);
+    if(dm_overwrite) {
+        fprintf(stdout, "Creating new tables in database.");
+        rc = sql_stmt("DROP TABLE IF EXISTS datamap;"
+                "CREATE TABLE datamap(id INTEGER PRIMARY KEY, name TEXT, date_created TEXT);"
+                ,db);
+        rc = sql_stmt("DROP TABLE IF EXISTS datamap_line;"
+                "CREATE TABLE datamap_line("
+                    "id INTEGER PRIMARY KEY,"
+                    "dm_id INTEGER,"
+                    "key TEXT NOT NULL,"
+                    "sheet TEXT NOT NULL,"
+                    "cellref TEXT,"
+                    "FOREIGN KEY (dm_id)"
+                    "   REFERENCES datamap(id)"
+                    "   ON DELETE CASCADE"
+                    ");", db);
+    }
 
     // prep datamap create sql
     sqlite3_stmt *dm_create_stmt;

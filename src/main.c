@@ -84,8 +84,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case DM_NAME:
             arguments->dm_name = arg;
+            break;
         case DM_OVERWRITE:
             arguments->dm_overwrite = 1;
+            break;
         case 'r':
             arguments->repeat = arg ? atoi (arg) : 10;
             break;
@@ -146,7 +148,7 @@ int main(int argc, char *argv[])
     if (strcmp("datamap", arguments.operation) == 0) {
         printf("Importing datamap file at %s\n", arguments.datamap_path);
         printf("DATAMAP_OVERWRITE = %d\n", arguments.dm_overwrite);
-        dm_import(arguments.datamap_path, arguments.dm_name);
+        dm_import(arguments.datamap_path, arguments.dm_name, arguments.dm_overwrite);
     }
     else if (strcmp("export", arguments.operation) == 0)
         printf("We are going to call an export() func here.\n");
