@@ -22,7 +22,12 @@ const char *dm_sql_str_create_table_datamapline = "DROP TABLE IF EXISTS datamap_
 extern void dm_sql_check_error(int rc, sqlite3 *db)
 {
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "Error #%d: %s\n", rc, sqlite3_errmsg(db));
+        const char *err = sqlite3_errmsg(db);
+        if(strncmp(err, "no such table", 14)) {
+            fprintf(stderr, "Unable to set up database. Please try running with --initial option.");
+        } else {
+            fprintf(stderr, "Error #%d: %s\n", rc, err);
+        }
         sqlite3_close(db);
         exit(rc);
     }

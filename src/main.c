@@ -27,24 +27,26 @@ enum datamap_options {
     DM_IMPORT = 0x100, // setting this to 0x100 (256) because non-ASCII characters ignored but we can still switch on it below
     DM_NAME,
     DM_OVERWRITE, // we want to start again with this datamap (DROP TABLE first)
+    DM_INITIAL, // this has the same effect as DM_OVERWRITE in that it creates the db tables for the first time
 };
 
 //The options we understand
 static struct argp_option options[] = {
     { 0,0,0,0, "Global options:" },
-    {"verbose", 'v', 0, 0, "Produce verbose output", 1},
-    {"quiet", 'q', 0, 0, "Don't produce any output", 1},
+    {"verbose", 'v', 0, 0, "Produce verbose output.", 1},
+    {"quiet", 'q', 0, 0, "Don't produce any output.", 1},
     {"silent", 's', 0, OPTION_ALIAS},
 
-    { 0,0,0,0, "Datamap options: (when calling 'datamaps datamap')" },
-    {"import", DM_IMPORT, "PATH", 0, "PATH to datamap file to import"},
-    {"name", DM_NAME, "NAME", 0, "The name you want to give to the imported datamap"},
-    {"overwrite", DM_OVERWRITE, 0, 0, "Start fresh with this datamap (erases existing datamap data)"},
+    { 0,0,0,0, "Datamap options: (when calling 'datamaps datamap')." },
+    {"import", DM_IMPORT, "PATH", 0, "PATH to datamap file to import."},
+    {"name", DM_NAME, "NAME", 0, "The name you want to give to the imported datamap."},
+    {"overwrite", DM_OVERWRITE, 0, 0, "Start fresh with this datamap (erases existing datamap data)."},
+    {"initial", DM_INITIAL, 0, 0, "This option must be used where no datamap table yet exists."},
 
     { 0,0,0,0, "The following options should be grouped together:" },
-    {"output", 'o', "FILE", 0, "Output to FILE instead of standard output"},
-    {"repeat", 'r', "COUNT", OPTION_ARG_OPTIONAL, "Repeat the output COUNT (default 10) times"},
-    {"abort", OPT_ABORT, 0, 0, "Abort before showing any output"},
+    {"output", 'o', "FILE", 0, "Output to FILE instead of standard output."},
+    {"repeat", 'r', "COUNT", OPTION_ARG_OPTIONAL, "Repeat the output COUNT (default 10) times."},
+    {"abort", OPT_ABORT, 0, 0, "Abort before showing any output."},
     {0}
 };
 
@@ -85,7 +87,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
         case DM_NAME:
             arguments->dm_name = arg;
             break;
-        case DM_OVERWRITE:
+        case DM_OVERWRITE: case DM_INITIAL:
             arguments->dm_overwrite = 1;
             break;
         case 'r':
