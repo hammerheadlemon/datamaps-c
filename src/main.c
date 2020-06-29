@@ -28,6 +28,7 @@ enum datamap_options {
     DM_NAME,
     DM_OVERWRITE, // we want to start again with this datamap (DROP TABLE first)
     DM_INITIAL, // this has the same effect as DM_OVERWRITE in that it creates the db tables for the first time
+    DM_IMPORT_SPREADSHEETS, // we import spreadsheets!
 };
 
 //The options we understand
@@ -42,6 +43,9 @@ static struct argp_option options[] = {
     {"name", DM_NAME, "NAME", 0, "The name you want to give to the imported datamap."},
     {"overwrite", DM_OVERWRITE, 0, 0, "Start fresh with this datamap (erases existing datamap data)."},
     {"initial", DM_INITIAL, 0, 0, "This option must be used where no datamap table yet exists."},
+
+    { 0,0,0,0, "Relating to importing spreadsheets" },
+    {"import-spreadsheet", DM_IMPORT_SPREADSHEETS, "PATH", 0, "PATH to spreadsheet to import."},
 
     { 0,0,0,0, "The following options should be grouped together:" },
     {"output", 'o', "FILE", 0, "Output to FILE instead of standard output."},
@@ -58,6 +62,7 @@ struct arguments
     int silent, verbose;
     char *output_file;
     char *datamap_path;
+    char *spreadsheet_path;
     char *dm_name;
     int dm_overwrite;
     int repeat;
@@ -89,6 +94,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case DM_OVERWRITE: case DM_INITIAL:
             arguments->dm_overwrite = 1;
+            break;
+        case DM_IMPORT_SPREADSHEETS:
+            arguments->spreadsheet_path = arg;
             break;
         case 'r':
             arguments->repeat = arg ? atoi (arg) : 10;
@@ -152,8 +160,10 @@ int main(int argc, char *argv[])
         printf("DATAMAP_OVERWRITE = %d\n", arguments.dm_overwrite);
         dm_import_dm(arguments.datamap_path, arguments.dm_name, arguments.dm_overwrite);
     }
-    else if (strcmp("export", arguments.operation) == 0)
+    else if (strcmp("export", arguments.operation) == 0) {
         printf("We are going to call an export() func here.\n");
+        read_spreadsheet();
+    }
 
     for (i = 0; i < arguments.repeat; ++i) {
         printf("ARG1 = %s\n", arguments.operation);

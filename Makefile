@@ -1,6 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g -std=c99
 LDFLAGS = -lsqlite3
+LDFLAGS += -lxlsxio_read
 
 all: datamaps
 	
