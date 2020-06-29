@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
     if (strcmp("datamap", arguments.operation) == 0) {
         printf("Importing datamap file at %s\n", arguments.datamap_path);
         printf("DATAMAP_OVERWRITE = %d\n", arguments.dm_overwrite);
-        dm_import(arguments.datamap_path, arguments.dm_name, arguments.dm_overwrite);
+        dm_import_dm(arguments.datamap_path, arguments.dm_name, arguments.dm_overwrite);
     }
     else if (strcmp("export", arguments.operation) == 0)
         printf("We are going to call an export() func here.\n");

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g -std=c11
+CFLAGS = -Wall -g -std=c99
 LDFLAGS = -lsqlite3
 
 all: datamaps
