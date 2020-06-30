@@ -223,7 +223,6 @@ extern int dm_import_dm(char *dm_path, char *dm_name, int dm_overwrite)
 
 /* -- ccompiler-engine code --------------------------------*/
 
-char *filename = "_test_template.xlsx";
 
 unsigned count = 0;
 
@@ -249,25 +248,25 @@ int rowcallback(size_t row, size_t maxcol, void* callbackdata) {
 
 int sheet_cell_callback(size_t row, size_t maxcol, const char* value,  void* callbackdata) {
     struct xlsx_callback_data *data = (struct xlsx_callback_data *) callbackdata;
-    printf("Sheet %s Row %ld, Col %ld Value %s\n", data->sheetname, row, maxcol, value);
+    printf("Sheet: %-10s Row: %-6ld Col: %-10c Value: %s\n", data->sheetname, row, (char)maxcol+64, value);
     return 0;
 }
 
 
-extern int read_spreadsheet() {
-    char **sheets = malloc(sizeof(char*) * 20);
+extern int read_spreadsheet(char *filepath) {
+    char **sheets = malloc(sizeof(char*) * 40);  // we need to be more flexible here about amount of sheets we can handle
     // This seems to be one way to do it...
     /*
      * Or we could do it when we want to opulate the array with
      * for...
      *  d[i] = (char *)malloc(sizeof(string)); // when we know the string
      */
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 40; i++) {
         sheets[i] = malloc((20+1) * sizeof(char));
     }
 
     xlsxioreader reader;
-    if ((reader = xlsxioread_open(filename)) == NULL) {
+    if ((reader = xlsxioread_open(filepath)) == NULL) {
         fprintf(stderr, "Cannot open file.\n");
         return 1;
     }

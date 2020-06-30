@@ -14,7 +14,7 @@ const char *argp_program_bug_address = "datamaps@twentyfoursoftware.com";
 static char doc[] = "datamaps -- extract data from spreadsheets using key values stored in CSV files! That is it.";
 
 // A description of the arguments we accept
-static char args_doc[] = "datamap|export";
+static char args_doc[] = "datamap|import";
 
 // Keys for options without short options
 #define OPT_ABORT 1  // --abort
@@ -45,7 +45,7 @@ static struct argp_option options[] = {
     {"initial", DM_INITIAL, 0, 0, "This option must be used where no datamap table yet exists."},
 
     { 0,0,0,0, "Relating to importing spreadsheets" },
-    {"import-spreadsheet", DM_IMPORT_SPREADSHEETS, "PATH", 0, "PATH to spreadsheet to import."},
+    {"spreadsheet", DM_IMPORT_SPREADSHEETS, "PATH", 0, "PATH to spreadsheet to import."},
 
     { 0,0,0,0, "The following options should be grouped together:" },
     {"output", 'o', "FILE", 0, "Output to FILE instead of standard output."},
@@ -142,6 +142,7 @@ int main(int argc, char *argv[])
     arguments.repeat = 1;
     arguments.abort = 0;
     arguments.datamap_path = "";
+    arguments.spreadsheet_path = "";
     arguments.dm_name = "New datamap";
     arguments.dm_overwrite = 0;
 
@@ -160,9 +161,12 @@ int main(int argc, char *argv[])
         printf("DATAMAP_OVERWRITE = %d\n", arguments.dm_overwrite);
         dm_import_dm(arguments.datamap_path, arguments.dm_name, arguments.dm_overwrite);
     }
-    else if (strcmp("export", arguments.operation) == 0) {
-        printf("We are going to call an export() func here.\n");
-        read_spreadsheet();
+    else if (strcmp("import", arguments.operation) == 0) {
+        printf("We are going to call an import() func here.\n");
+        if(strcmp("", arguments.spreadsheet_path) == 0) {
+            fprintf(stderr, "You probably need to use the --spreadsheet option here.\n");
+        }
+        read_spreadsheet(arguments.spreadsheet_path);
     }
 
     for (i = 0; i < arguments.repeat; ++i) {
