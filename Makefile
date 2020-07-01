@@ -1,18 +1,14 @@
-CC = gcc
+CC = c99
+EXE = datamap
 CFLAGS = -Wall -g -std=c99
-LDFLAGS = -lsqlite3
-LDFLAGS += -lxlsxio_read
+LDFLAGS = -lsqlite3 -lxlsxio_read
 
-all: datamaps
-	
-datamaps: src/reader.o src/main.o
-	gcc src/reader.o src/main.o -o datamaps $(CFLAGS) $(LDFLAGS)
+.PHONY: all clean
 
-reader.o:  
-	gcc -c src/reader.c src/reader.h $(LDFLAGS)
+all: $(EXE)
 
-main.o:
-	gcc -c src/main.c
+$(EXE): reader.o main.o
+	$(CC) reader.o main.o -o datamaps $(CFLAGS) $(LDFLAGS)
 
 clean:
-	rm src/reader.o src/main.o datamaps test.db
+	rm reader.o main.o datamaps test.db
