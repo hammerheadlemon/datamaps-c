@@ -1,6 +1,9 @@
 #include <glib.h>
 #include "reader.h"
 
+/* This is instructive: https://developer.gnome.org/glib/stable/glib-Testing.html
+ * plus 52-56 in 21st Century C */
+
 typedef struct {
     char *dm_file;
     Datamapline dml;
