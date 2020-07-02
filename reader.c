@@ -246,8 +246,31 @@ int rowcallback(size_t row, size_t maxcol, void* callbackdata) {
     return 0;
 }
 
+
+int get_all_sheet_and_cellrefs_from_datamap_in_sqlite3(sqlite3 *dm, char *dm_name) {
+    // this needs to call this SQL:
+    // select datamap_line.sheet, datamap_line.cellref from datamap join datamap_line where datamap.name = (?);
+    // value here needs to dm_name obviously
+    return 0;
+}
+
+
 int sheet_cell_callback(size_t row, size_t maxcol, const char* value,  void* callbackdata) {
     struct xlsx_callback_data *data = (struct xlsx_callback_data *) callbackdata;
+
+    /* Here we need to check the datamap for a sheet|cellref combination.
+     * When we get a hit, we need to add the value to the "returns" table,
+     * which we have not created yet. So time to run some tests for doing that.
+     * We could do that in a test or just carry on mucking about with main().
+     *
+     * But we want to do the writing in a big transaction so we should store
+     * all the data first.
+     *
+     * hcreate() is an option here for storing the stuff we get back.
+     * 
+     */
+
+
     printf("Sheet: %-10s Row: %-6ld Col: %-10c Value: %s\n", data->sheetname, row, (char)maxcol+64, value);
     return 0;
 }
@@ -276,6 +299,7 @@ extern int read_spreadsheet(char *filepath) {
         printf("%s\n", sheets[i]);
         struct xlsx_callback_data callbackdata;
         callbackdata.sheetname = sheets[i];
+        // sheet_cell_callback() - where we want to do our filtering
         xlsxioread_process(reader, sheets[i], XLSXIOREAD_SKIP_EMPTY_ROWS, sheet_cell_callback, rowcallback, &callbackdata);
     }
     return 0;
