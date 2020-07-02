@@ -3,3 +3,4 @@ datamaps
 vgcore*
 */**.o
 test.db
+*.o

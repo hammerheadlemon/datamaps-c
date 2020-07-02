@@ -1,6 +1,6 @@
-CC = c99
+CC = gcc
 EXE = datamap
-CFLAGS = -Wall -g -std=c99
+CFLAGS = -Wall -g -std=c99 -Wpedantic -O0
 LDFLAGS = -lsqlite3 -lxlsxio_read
 
 .PHONY: all clean
