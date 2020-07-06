@@ -112,18 +112,38 @@ extern int populate_datamapLine(char *line, Datamapline *dml)
  * have this in the database!
  *    - SELECT datamap_line.cellref from datamap_line where datamap_line.sheet = 'Introduction'
  */
-extern int populate_array_cellrefs_for_sheet(sqlite3 *db, char *sheetname, char *array)
+extern int populate_array_cellrefs_for_sheet(sqlite3 *db, char *sheetname, const char* *cellrefs)
 {
+    // Example: https://www.lemoda.net/c/sqlite-select/
     int rc;
-    const char *dm_get_cellrefs_for_sheet_sql = "SELECT datamap_line.cellref FROM datamap_line WHERE datamap_line.sheet = ?";
-    sqlite3_stmt *dm_get_cellrefs_stmt;
-    rc = sqlite3_prepare_v2(db, dm_get_cellrefs_for_sheet_sql, -1, &dm_get_cellrefs_stmt, NULL);
+    int count = 0;
+    sqlite3_stmt *stmt;
+    
+    const char *sql = "SELECT datamap_line.cellref FROM datamap_line WHERE datamap_line.sheet = ?";
+    rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     dm_sql_check_error(rc, db);
 
-    sqlite3_bind_text(dm_get_cellrefs_stmt, 1, sheetname, -1, SQLITE_TRANSIENT);
-    
-    while(sqlite3_step(dm_get_cellrefs_stmt) != (SQLITE_ERROR | SQLITE_DONE)) {
-        printf("%s\n", sqlite3_column_text(dm_get_cellrefs_stmt, 0));
+    sqlite3_bind_text(stmt, 1, sheetname, -1, SQLITE_TRANSIENT);
+
+    while(1) {
+        int s;
+        s = sqlite3_step(stmt);
+        if (s == SQLITE_ROW) {
+            const unsigned char *cellref_text;
+            cellref_text = sqlite3_column_text(stmt, 0);
+            printf("%s\n", cellref_text);
+           
+            cellrefs[count] = malloc(strlen((char *)cellref_text+1) * sizeof(char));
+            strcpy(cellrefs[count], cellref_text);
+            count++;
+        }
+        else if (s == SQLITE_DONE) {
+            break;
+        }
+        else {
+            fprintf(stderr, "Failed.\n");
+            exit(1);
+        }
     }
     return 0;
 }
@@ -250,10 +270,18 @@ extern int dm_import_dm(char *dm_path, char *dm_name, int dm_overwrite)
     }
         sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
 
-        char **cellrefs = malloc(sizeof(char*) * 100);
+        /* char **cellrefs = malloc(sizeof(char*) * 100); */
+        const char **cellrefs;
+        cellrefs = malloc(512*sizeof(char*));
         int ret_val;
-        ret_val = populate_array_cellrefs_for_sheet(db, "Introduction", *cellrefs);
-
+        ret_val = populate_array_cellrefs_for_sheet(db, "Introduction", cellrefs);
+        for(int x=0; x<512; x++) {
+            printf("Cellref: %s\n", cellrefs[x]);
+        }
+        for(int x=0; x<512; x++) {
+            free(cellrefs[x]);
+        }
+        free(cellrefs);
         sqlite3_close(db);
         return 0;
 }
