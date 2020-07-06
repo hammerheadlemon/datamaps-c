@@ -96,6 +96,38 @@ extern int populate_datamapLine(char *line, Datamapline *dml)
     return 0;
 }
 
+/* When xlsioreader traverses a sheet, it happens upon every cell in every row.
+ * We only want to get values from cells which are contained in the datamap
+ * - particularly a Datamapline.sheet/Datamapline.cellref combination.
+ *
+ * We don't want to do be doing a SQL SELECT statement every time, so a hash
+ * function makes more sense.  e.g. We are on a particular cell on the
+ * spreadsheet. We know what sheet we are on and what cell/col coordate we are
+ * on (i.e. the cell reference). We want to check with that is in datamap. What
+ * data structure do we want?
+ *
+ * A lookup table?
+ * https://embeddedgurus.com/stack-overflow/2010/01/a-tutorial-on-lookup-tables-in-c/
+ * To be effective, this has to be computed ahead of time... Wait, we already
+ * have this in the database!
+ *    - SELECT datamap_line.cellref from datamap_line where datamap_line.sheet = 'Introduction'
+ */
+extern int populate_array_cellrefs_for_sheet(sqlite3 *db, char *sheetname, char *array)
+{
+    int rc;
+    const char *dm_get_cellrefs_for_sheet_sql = "SELECT datamap_line.cellref FROM datamap_line WHERE datamap_line.sheet = ?";
+    sqlite3_stmt *dm_get_cellrefs_stmt;
+    rc = sqlite3_prepare_v2(db, dm_get_cellrefs_for_sheet_sql, -1, &dm_get_cellrefs_stmt, NULL);
+    dm_sql_check_error(rc, db);
+
+    sqlite3_bind_text(dm_get_cellrefs_stmt, 1, sheetname, -1, SQLITE_TRANSIENT);
+    
+    while(sqlite3_step(dm_get_cellrefs_stmt) != (SQLITE_ERROR | SQLITE_DONE)) {
+        printf("%s\n", sqlite3_column_text(dm_get_cellrefs_stmt, 0));
+    }
+    return 0;
+}
+
 
 /* Import a datamap file into the database */
 /* dm_name is a name a user can add - CHECK THIS */
@@ -217,6 +249,11 @@ extern int dm_import_dm(char *dm_path, char *dm_name, int dm_overwrite)
         sqlite3_finalize(compiled_statement);
     }
         sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
+
+        char **cellrefs = malloc(sizeof(char*) * 100);
+        int ret_val;
+        ret_val = populate_array_cellrefs_for_sheet(db, "Introduction", *cellrefs);
+
         sqlite3_close(db);
         return 0;
 }
