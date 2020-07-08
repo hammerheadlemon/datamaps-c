@@ -115,12 +115,11 @@ extern int populate_datamapLine(char *line, Datamapline *dml)
 extern int populate_array_cellrefs_for_sheet(sqlite3 *db, char *sheetname, const char* *cellrefs)
 {
     // Example: https://www.lemoda.net/c/sqlite-select/
-    int rc;
     int count = 0;
     sqlite3_stmt *stmt;
     
     const char *sql = "SELECT datamap_line.cellref FROM datamap_line WHERE datamap_line.sheet = ?";
-    rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     dm_sql_check_error(rc, db);
 
     sqlite3_bind_text(stmt, 1, sheetname, -1, SQLITE_TRANSIENT);
@@ -131,9 +130,9 @@ extern int populate_array_cellrefs_for_sheet(sqlite3 *db, char *sheetname, const
         if (s == SQLITE_ROW) {
             const unsigned char *cellref_text;
             cellref_text = sqlite3_column_text(stmt, 0);
-            printf("%s\n", cellref_text);
+            printf("Cellref: %s\n", cellref_text);
            
-            cellrefs[count] = malloc(strlen((char *)cellref_text+1) * sizeof(char));
+            cellrefs[count] = malloc(strlen((char *)cellref_text+1));
             strcpy(cellrefs[count], cellref_text);
             count++;
         }
@@ -270,17 +269,18 @@ extern int dm_import_dm(char *dm_path, char *dm_name, int dm_overwrite)
     }
         sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
 
+        /********************************************************/
+        /* HERE WE ARE PULLING ALL CELLREFS FROM THIS DATAMAP
+         * Question is - should we be doing that here?? No! This is needed
+         * when we read from a populated spreadsheet */
+
         /* char **cellrefs = malloc(sizeof(char*) * 100); */
         const char **cellrefs;
-        cellrefs = malloc(512*sizeof(char*));
+        cellrefs = malloc(1024*sizeof(const char*)); /* A poor guess at the length we need */
         int ret_val;
         ret_val = populate_array_cellrefs_for_sheet(db, "Introduction", cellrefs);
-        for(int x=0; x<512; x++) {
-            printf("Cellref: %s\n", cellrefs[x]);
-        }
-        for(int x=0; x<512; x++) {
-            free(cellrefs[x]);
-        }
+        /* We need to do something with cellrefs here before freeing the memory
+         * This is the index of cellrefs that we want to pull */
         free(cellrefs);
         sqlite3_close(db);
         return 0;
