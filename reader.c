@@ -269,19 +269,6 @@ extern int dm_import_dm(char *dm_path, char *dm_name, int dm_overwrite)
     }
         sqlite3_exec(db, "END TRANSACTION", NULL, NULL, &err_msg);
 
-        /********************************************************/
-        /* HERE WE ARE PULLING ALL CELLREFS FROM THIS DATAMAP
-         * Question is - should we be doing that here?? No! This is needed
-         * when we read from a populated spreadsheet */
-
-        /* char **cellrefs = malloc(sizeof(char*) * 100); */
-        const char **cellrefs;
-        cellrefs = malloc(1024*sizeof(const char*)); /* A poor guess at the length we need */
-        int ret_val;
-        ret_val = populate_array_cellrefs_for_sheet(db, "Introduction", cellrefs);
-        /* We need to do something with cellrefs here before freeing the memory
-         * This is the index of cellrefs that we want to pull */
-        free(cellrefs);
         sqlite3_close(db);
         return 0;
 }
@@ -349,6 +336,34 @@ extern int read_spreadsheet(char *filepath) {
      * for...
      *  d[i] = (char *)malloc(sizeof(string)); // when we know the string
      */
+
+    sqlite3 *db;
+
+
+    /********************************************************/
+    /* HERE WE ARE PULLING ALL CELLREFS FROM THIS DATAMAP
+        * Question is - should we be doing that here?? No! This is needed
+        * when we read from a populated spreadsheet */
+
+
+
+    // returns a return code
+    int rc = sqlite3_open("test.db", &db);
+    // handle error if this fails - we use this all over the place
+    dm_sql_check_error(rc, db);
+
+    rc = dm_exec_sql_stmt("PRAGMA foreign_keys = ON;",  db); // we have to do this every call
+    const char **cellrefs;
+    cellrefs = malloc(1024*sizeof(const char*)); /* A poor guess at the length we need */
+    int ret_val;
+    ret_val = populate_array_cellrefs_for_sheet(db, "Introduction", cellrefs);
+    /* We need to do something with cellrefs here before freeing the memory
+        * This is the index of cellrefs that we want to pull */
+    free(cellrefs);
+
+    /* END OF CELLREF PULLING */
+
+
     for (int i = 0; i < 40; i++) {
         sheets[i] = malloc((20+1) * sizeof(char));
     }
