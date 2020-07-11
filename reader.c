@@ -111,6 +111,7 @@ extern int populate_datamapLine(char *line, Datamapline *dml)
  * To be effective, this has to be computed ahead of time... Wait, we already
  * have this in the database!
  *    - SELECT datamap_line.cellref from datamap_line where datamap_line.sheet = 'Introduction'
+ * Returns the length of the array if good.
  */
 extern int populate_array_cellrefs_for_sheet(sqlite3 *db, char *sheetname, const char* *cellrefs)
 {
@@ -141,10 +142,10 @@ extern int populate_array_cellrefs_for_sheet(sqlite3 *db, char *sheetname, const
         }
         else {
             fprintf(stderr, "Failed.\n");
-            exit(1);
+            exit(-1);
         }
     }
-    return 0;
+    return count;
 }
 
 
@@ -290,11 +291,13 @@ int list_sheets_callback(const char *sheetname, void *callbackdata) {
 //callback data structure
 struct xlsx_callback_data {
     char *sheetname;
+    const char ** cellrefs_arry;
+    size_t cellrefs_size;
 };
 
 
 int rowcallback(size_t row, size_t maxcol, void* callbackdata) {
-    printf("In BUT THIS IS SELDOM USED!\n");
+    printf("In rowcallback BUT THIS IS SELDOM USED!\n");
     return 0;
 }
 
@@ -322,8 +325,37 @@ int sheet_cell_callback(size_t row, size_t maxcol, const char* value,  void* cal
      * 
      */
 
+    /* TODO only print here if the cellref is in the sheet cellrefs array */
 
-    printf("Sheet: %-10s Row: %-6ld Col: %-10c Value: %s\n", data->sheetname, row, (char)maxcol+64, value);
+    /* Making characters into strings - yes, it's a PITA in C */ 
+    int in = 0; // counter, for iterating through the array
+    char column_s[2];
+    char row_s[2];
+    column_s[0] = (char)(maxcol+64);
+    column_s[1] = '\0';
+    row_s[0] = (char)(row+48);
+    row_s[1] = '\0';
+
+    char *cref = strcat(column_s, row_s); // cref is cellref that xlsxreader is on in the loop
+
+    /* If that cellref is in the array of cellrefs from the datamap, we want to
+     * use the value. If not, we skip it. */
+
+    for (int x=0; x < data->cellrefs_size; x++) {
+        if(strcmp(cref, data->cellrefs_arry[x]) == 0) {
+            in = 1;
+            break;
+        }
+        /* printf("%s - %s\n", cref, data->cellrefs_arry[x]); */
+    }
+    /* printf("Doing %s in sheet %s\n", cref, data->sheetname); */
+    if (in == 1) {
+        if(strcmp(data->sheetname, "Introduction") == 0) {
+            printf("Sheet: %-10s Row: %-6ld Col: %-10c Value: %s\n", data->sheetname, row, (char)maxcol+64, value);
+        }
+    } else {
+        return 0;
+    }
     return 0;
 }
 
@@ -353,16 +385,10 @@ extern int read_spreadsheet(char *filepath) {
     dm_sql_check_error(rc, db);
 
     rc = dm_exec_sql_stmt("PRAGMA foreign_keys = ON;",  db); // we have to do this every call
-    const char **cellrefs;
-    cellrefs = malloc(1024*sizeof(const char*)); /* A poor guess at the length we need */
-    int ret_val;
-    ret_val = populate_array_cellrefs_for_sheet(db, "Introduction", cellrefs);
     /* We need to do something with cellrefs here before freeing the memory
         * This is the index of cellrefs that we want to pull */
-    free(cellrefs);
 
     /* END OF CELLREF PULLING */
-
 
     for (int i = 0; i < 40; i++) {
         sheets[i] = malloc((20+1) * sizeof(char));
@@ -375,13 +401,19 @@ extern int read_spreadsheet(char *filepath) {
     }
     xlsxioread_list_sheets(reader, list_sheets_callback, sheets);
     printf("First entry in sheets in main after xlsxioread_list_sheets is %s\n", sheets[0]);
+    const char **cellrefs;
+    cellrefs = malloc(1024*sizeof(const char*)); /* A poor guess at the length we need */
     for (int i=0; i < 5; i++) { // 5 is wrong here
+        int ret_val = populate_array_cellrefs_for_sheet(db, sheets[i], cellrefs);
         printf("%s\n", sheets[i]);
         struct xlsx_callback_data callbackdata;
         callbackdata.sheetname = sheets[i];
+        callbackdata.cellrefs_arry = cellrefs;
+        callbackdata.cellrefs_size = ret_val;
         // sheet_cell_callback() - where we want to do our filtering
         xlsxioread_process(reader, sheets[i], XLSXIOREAD_SKIP_EMPTY_ROWS, sheet_cell_callback, rowcallback, &callbackdata);
     }
+    free(cellrefs);
     return 0;
     
 }
