@@ -297,7 +297,7 @@ struct xlsx_callback_data {
 
 
 int rowcallback(size_t row, size_t maxcol, void* callbackdata) {
-    printf("In rowcallback BUT THIS IS SELDOM USED!\n");
+    /* printf("In rowcallback BUT THIS IS SELDOM USED!\n"); */
     return 0;
 }
 
@@ -325,22 +325,24 @@ int sheet_cell_callback(size_t row, size_t maxcol, const char* value,  void* cal
      * 
      */
 
-    /* TODO only print here if the cellref is in the sheet cellrefs array */
+    /* Making characters into strings - yes, it's a PITA in
+     * Also - it doesn't work */
 
-    /* Making characters into strings - yes, it's a PITA in C */ 
     int in = 0; // counter, for iterating through the array
-    char column_s[2];
-    char row_s[2];
-    column_s[0] = (char)(maxcol+64);
-    column_s[1] = '\0';
-    row_s[0] = (char)(row+48);
-    row_s[1] = '\0';
+
+    char row_s[5];
+    sprintf(row_s, "%d", (int)row);
+
+    char column_s[5];
+    sprintf(column_s, "%c", (char)(maxcol+64));
+
 
     char *cref = strcat(column_s, row_s); // cref is cellref that xlsxreader is on in the loop
 
     /* If that cellref is in the array of cellrefs from the datamap, we want to
      * use the value. If not, we skip it. */
 
+    /* TODO - this doesn't work until we can properly parse cell refs from col and row identifiers */
     for (int x=0; x < data->cellrefs_size; x++) {
         if(strcmp(cref, data->cellrefs_arry[x]) == 0) {
             in = 1;
