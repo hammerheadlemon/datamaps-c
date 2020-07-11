@@ -313,21 +313,6 @@ int get_all_sheet_and_cellrefs_from_datamap_in_sqlite3(sqlite3 *dm, char *dm_nam
 int sheet_cell_callback(size_t row, size_t maxcol, const char* value,  void* callbackdata) {
     struct xlsx_callback_data *data = (struct xlsx_callback_data *) callbackdata;
 
-    /* Here we need to check the datamap for a sheet|cellref combination.
-     * When we get a hit, we need to add the value to the "returns" table,
-     * which we have not created yet. So time to run some tests for doing that.
-     * We could do that in a test or just carry on mucking about with main().
-     *
-     * But we want to do the writing in a big transaction so we should store
-     * all the data first.
-     *
-     * hcreate() is an option here for storing the stuff we get back.
-     * 
-     */
-
-    /* Making characters into strings - yes, it's a PITA in
-     * Also - it doesn't work */
-
     int in = 0; // counter, for iterating through the array
 
     char row_s[5];
@@ -339,18 +324,12 @@ int sheet_cell_callback(size_t row, size_t maxcol, const char* value,  void* cal
 
     char *cref = strcat(column_s, row_s); // cref is cellref that xlsxreader is on in the loop
 
-    /* If that cellref is in the array of cellrefs from the datamap, we want to
-     * use the value. If not, we skip it. */
-
-    /* TODO - this doesn't work until we can properly parse cell refs from col and row identifiers */
     for (int x=0; x < data->cellrefs_size; x++) {
         if(strcmp(cref, data->cellrefs_arry[x]) == 0) {
             in = 1;
             break;
         }
-        /* printf("%s - %s\n", cref, data->cellrefs_arry[x]); */
     }
-    /* printf("Doing %s in sheet %s\n", cref, data->sheetname); */
     if (in == 1) {
         if(strcmp(data->sheetname, "Introduction") == 0) {
             printf("Sheet: %-10s Row: %-6ld Col: %-10c Value: %s\n", data->sheetname, row, (char)maxcol+64, value);
@@ -364,12 +343,6 @@ int sheet_cell_callback(size_t row, size_t maxcol, const char* value,  void* cal
 
 extern int read_spreadsheet(char *filepath) {
     char **sheets = malloc(sizeof(char*) * 40);  // we need to be more flexible here about amount of sheets we can handle
-    // This seems to be one way to do it...
-    /*
-     * Or we could do it when we want to opulate the array with
-     * for...
-     *  d[i] = (char *)malloc(sizeof(string)); // when we know the string
-     */
 
     sqlite3 *db;
 
